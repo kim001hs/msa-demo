@@ -2,6 +2,11 @@
 
 > **Note:** 본 프로젝트는 현재 개발 및 구축 진행 중(WIP)인 저장소입니다. 세부 구조와 구현 내용은 진행 상황에 따라 변경될 수 있습니다.
 
+> [!NOTE]
+> **Workload Attribution:**  
+> This project uses Google Cloud's [Online Boutique (microservices-demo)](https://github.com/GoogleCloudPlatform/microservices-demo) as the target microservice workload.  
+> The infrastructure, observability stack, chaos experiments, AIOps/RCA pipeline, and evaluation framework are independently designed and implemented as part of this project.
+
 Kubernetes 마이크로서비스 환경에서 발생하는 다수의 Alert를 인시던트(Incident) 단위로 그룹화하고, **Read-only LLM Agent가 다차원 텔레메트리(Metrics, Logs, Traces)를 자율 조사하여 1차 근본 원인 분석(RCA)을 수행하는 시스템**입니다.
 
 Chaos Engineering을 통해 재현 가능한 장애(Ground Truth)를 주입하고, Agent의 진단 정확도와 시간을 정량적으로 반복 평가하는 파이프라인 구축을 목표로 합니다.

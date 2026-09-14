@@ -18,7 +18,7 @@ variable "cluster_name" {
 variable "cluster_version" {
   description = "Kubernetes version for the EKS Cluster"
   type        = string
-  default     = "1.30"
+  default     = "1.37"
 }
 
 variable "vpc_id" {
@@ -37,9 +37,9 @@ variable "public_subnet_ids" {
 }
 
 variable "node_instance_types" {
-  description = "Instance types for the EKS managed node group (Graviton ARM64)"
+  description = "Instance types for the EKS managed node group (x86_64)"
   type        = list(string)
-  default     = ["t4g.large"]
+  default     = ["t3.large"]
 }
 
 variable "node_capacity_type" {

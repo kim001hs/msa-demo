@@ -7,9 +7,10 @@ availability_zones  = ["ap-northeast-2a", "ap-northeast-2c"]
 public_subnet_cidrs = ["10.0.1.0/24", "10.0.2.0/24"]
 private_subnet_cidrs = ["10.0.10.0/24", "10.0.20.0/24"]
 
-# 비용 최적화 (FinOps) 설정
-# Graviton ARM64 (t4g.large) 사용으로 x86 대비 20% 절감
-node_instance_types = ["t4g.large"]
+cluster_version     = "1.37"
+
+# 워커 노드 아키텍처 설정 (x86_64 t3.large)
+node_instance_types = ["t3.large"]
 node_capacity_type  = "ON_DEMAND" # 추가 비용 절감이 필요하면 "SPOT"으로 변경 가능
 node_desired_size   = 2
 node_min_size       = 1

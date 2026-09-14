@@ -21,10 +21,10 @@ resource "aws_eks_cluster" "main" {
   }
 }
 
-# 2. EKS Managed Node Group (AWS Graviton ARM64)
-resource "aws_eks_node_group" "graviton" {
+# 2. EKS Managed Node Group (x86_64 t3.large)
+resource "aws_eks_node_group" "main" {
   cluster_name    = aws_eks_cluster.main.name
-  node_group_name = "${var.cluster_name}-graviton-ng"
+  node_group_name = "${var.cluster_name}-default-ng"
   node_role_arn   = aws_iam_role.node_group.arn
 
   # 보안을 위해 워커 노드는 반드시 Private Subnet에만 배치
@@ -36,9 +36,9 @@ resource "aws_eks_node_group" "graviton" {
     max_size     = var.node_max_size
   }
 
-  # Graviton 사양: ARM64 및 Amazon Linux 2023 AMI
-  instance_types = var.node_instance_types # ["t4g.large"]
-  ami_type       = "AL2023_ARM_64_STANDARD"
+  # x86_64 사양: Amazon Linux 2023 AMI
+  instance_types = var.node_instance_types # ["t3.large"]
+  ami_type       = "AL2023_x86_64_STANDARD"
   capacity_type  = var.node_capacity_type # "ON_DEMAND" 또는 "SPOT"
 
   update_config {
@@ -52,7 +52,7 @@ resource "aws_eks_node_group" "graviton" {
   ]
 
   tags = {
-    Name        = "${var.cluster_name}-graviton-node"
+    Name        = "${var.cluster_name}-default-node"
     Environment = var.environment
     ManagedBy   = "Terraform"
   }

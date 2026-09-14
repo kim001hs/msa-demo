@@ -22,6 +22,12 @@ variable "cluster_name" {
   default     = "msa-demo-dev-eks"
 }
 
+variable "cluster_version" {
+  description = "Kubernetes version for the EKS Cluster"
+  type        = string
+  default     = "1.37"
+}
+
 variable "vpc_cidr" {
   description = "CIDR block for the VPC"
   type        = string
@@ -47,9 +53,9 @@ variable "private_subnet_cidrs" {
 }
 
 variable "node_instance_types" {
-  description = "Worker node EC2 instance types (Graviton ARM64)"
+  description = "Worker node EC2 instance types (x86_64)"
   type        = list(string)
-  default     = ["t4g.large"]
+  default     = ["t3.large"]
 }
 
 variable "node_capacity_type" {

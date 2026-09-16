@@ -7,13 +7,13 @@
 #    S3 원격 저장소로 안전하게 마이그레이션됩니다.
 # ==============================================================================
 
-# terraform {
-#   backend "s3" {
-#     bucket         = "<bootstrap에서_출력된_S3_버킷_이름>"
-#     key            = "envs/dev/terraform.tfstate"
-#     region         = "ap-northeast-2"
-#     dynamodb_table = "msa-demo-tflock"
-#     encrypt        = true
-#   }
-# }
+terraform {
+  backend "s3" {
+    bucket         = "msa-demo-tfstate-ssouyy"
+    key            = "envs/dev/terraform.tfstate"
+    region         = "ap-northeast-2"
+    dynamodb_table = "msa-demo-tflock"
+    encrypt        = true
+  }
+}
 

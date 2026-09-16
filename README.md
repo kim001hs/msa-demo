@@ -32,7 +32,7 @@ flowchart LR
 
 | 영역 | 구성 요소 | 비고 |
 | :--- | :--- | :--- |
-| **Cloud & Infra** | AWS EKS (`v1.37`), Terraform, `fck-nat` | x86_64 (`t3.large`) 노드 그룹, FinOps 최적화 |
+| **Cloud & Infra** | AWS EKS (`v1.36`), Terraform, `fck-nat` | x86_64 (`t3.large`) 노드 그룹, FinOps 최적화 |
 | **Target App** | Google Cloud Online Boutique (11 Services) | 마이크로서비스 및 In-Cluster Redis 캐시 |
 | **Observability** | Prometheus, Grafana Loki, Tempo, Grafana | Metrics, Logs, Distributed Traces 수집 |
 | **AIOps & Incident** | Keep, Claude / OpenAI LLM API | Alert Deduplication, Incident 그룹화, RCA 파이프라인 |
@@ -43,7 +43,7 @@ flowchart LR
 ## 📁 주요 디렉토리 구조
 
 ```text
-├── terraform/               # AWS VPC, fck-nat, EKS v1.37 프로비저닝 (IaC)
+├── terraform/               # AWS VPC, fck-nat, EKS v1.36 프로비저닝 (IaC)
 ├── helm-chart/              # Online Boutique 애플리케이션 Helm 차트
 ├── docs/
 │   ├── infra-project/       # 시스템 아키텍처, ADR-001(x86_64 채택 근거), 실험 계획

@@ -25,7 +25,7 @@ variable "cluster_name" {
 variable "cluster_version" {
   description = "Kubernetes version for the EKS Cluster"
   type        = string
-  default     = "1.37"
+  default     = "1.36"
 }
 
 variable "vpc_cidr" {

@@ -23,3 +23,8 @@ output "backend_snippet" {
   EOT
 }
 
+output "github_actions_role_arn" {
+  description = "ARN of the IAM Role for GitHub Actions OIDC"
+  value       = aws_iam_role.github_actions.arn
+}
+

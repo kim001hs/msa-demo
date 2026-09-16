@@ -16,7 +16,7 @@ flowchart TB
             end
 
             subgraph PrivateSubnets["Private Subnets (2 AZs)"]
-                subgraph EKS["EKS Cluster v1.37 (x86_64 t3.large)"]
+                subgraph EKS["EKS Cluster v1.36 (x86_64 t3.large)"]
                     subgraph Workloads["Online Boutique (11 Services)"]
                         FE["frontend (Go)"]
                         Cart["cartservice (C#)"]
@@ -61,7 +61,7 @@ flowchart TB
   - Public Subnet 2개, Private Subnet 2개
   - **NAT 솔루션:** `fck-nat` (`t4g.nano` ARM64, 월 \$3.5 수준 초경량 NAT 인스턴스)
 * **컨테이너 오케스트레이션 (EKS):**
-  - **EKS 버전:** `v1.37` (최신 버전)
+  - **EKS 버전:** `v1.36` (최신 안정 버전)
   - **워커 노드 아키텍처:** **x86_64 (`t3.large`, AL2023_x86_64_STANDARD)**
   - *아키텍처 결정 근거:* [ADR-001 (x86_64 채택 근거)](file:///d:/Github_Repository/msa-demo/docs/infra-project/decisions.md#adr-001-eks-워커-노드-아키텍처-선정-arm64-대신-x86_64-t3large-채택) 참조.
 

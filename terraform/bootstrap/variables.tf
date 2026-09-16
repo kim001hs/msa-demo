@@ -10,3 +10,9 @@ variable "project_name" {
   default     = "msa-demo"
 }
 
+variable "github_repo" {
+  description = "GitHub repository in the format owner/repo"
+  type        = string
+  default     = "kim001hs/msa-demo"
+}
+

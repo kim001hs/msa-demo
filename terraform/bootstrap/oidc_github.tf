@@ -27,8 +27,11 @@ resource "aws_iam_role" "github_actions" {
             "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
           }
           StringLike = {
-            # 지정된 리포지토리의 모든 워크플로우/브랜치에서 Assume 가능
-            "token.actions.githubusercontent.com:sub" = "repo:${var.github_repo}:*"
+            # 지정된 리포지토리의 모든 워크플로우/브랜치에서 Assume 가능 (GitHub 신규 불변 ID 포맷 지원)
+            "token.actions.githubusercontent.com:sub" = [
+              "repo:${var.github_repo}:*",
+              "repo:${var.github_repo}*:*"
+            ]
           }
         }
       }

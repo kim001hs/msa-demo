@@ -16,6 +16,7 @@ output "eks_cluster_name" {
 output "github_actions_role_arn" {
   description = "IAM role ARN that must match the AWS_ROLE_ARN GitHub Actions Secret"
   value       = local.github_actions_role_arn
+  sensitive   = true
 }
 
 output "eks_cluster_endpoint" {

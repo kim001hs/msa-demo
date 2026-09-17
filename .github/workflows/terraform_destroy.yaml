@@ -82,7 +82,6 @@ jobs:
 
           if [ "$AWS_ROLE_ARN" != "$EXPECTED_ROLE_ARN" ]; then
             echo "AWS_ROLE_ARN Secret does not match the role managed by Terraform."
-            echo "Expected: $EXPECTED_ROLE_ARN"
             exit 1
           fi
 

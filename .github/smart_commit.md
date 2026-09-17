@@ -149,6 +149,9 @@ git commit -m "<type>: <설명>"
 git push origin $CURRENT_BRANCH
 ```
 
+> [!IMPORTANT]
+> **PR 브랜치에 push한 경우 AI 코드 리뷰 댓글 등록은 필수입니다.** 기존 리뷰 댓글이 있더라도 최신 HEAD 전체 diff를 다시 분석하여 새 리뷰 댓글을 남겨야 하며, 리뷰 결과가 `치명적 0건`이어도 생략할 수 없습니다.
+
 ---
 
 ## 3. Target Branch 결정
@@ -248,11 +251,14 @@ PR_URL=$(gh pr create \
 
 echo "✅ PR 생성 완료: $PR_URL"
 
-# 2. PR 생성 직후 별도 댓글(Comment)로 AI 코드 리뷰 자동 등록!
-if [ -f .pr_review_temp.md ]; then
-  gh pr comment "$PR_URL" --body-file .pr_review_temp.md
-  echo "🤖 AI 코드 리뷰 코멘트 등록 완료."
-fi
+# 2. PR 생성 직후 별도 댓글(Comment)로 AI 코드 리뷰 필수 등록
+test -s .pr_review_temp.md || {
+  echo "❌ Error: AI 코드 리뷰 파일이 없거나 비어 있습니다."
+  exit 1
+}
+
+gh pr comment "$PR_URL" --body-file .pr_review_temp.md
+echo "🤖 AI 코드 리뷰 코멘트 등록 완료."
 ```
 
 ### Step 5: 임시 파일 정리
@@ -276,6 +282,8 @@ git log origin/$TARGET_BRANCH..$CURRENT_BRANCH --oneline
 
 `.github/pull_request_template.md` 및 `.github/code_review_template.md`를 참조하여 최신 변경사항을 `.pr_body_temp.md` 및 `.pr_review_temp.md`에 재작성합니다.
 
+> **필수:** PR 브랜치에 새 커밋을 push할 때마다 최신 HEAD 기준 전체 diff를 다시 검토하고 새 AI 코드 리뷰 댓글을 등록합니다. 이전 리뷰가 존재하거나 지적 사항이 0건이어도 생략하지 않습니다. 리뷰 본문에는 검토한 HEAD SHA와 검증 결과를 포함합니다.
+
 ### Step 3: PR 본문 업데이트 및 새 리뷰 코멘트 등록
 
 ```bash
@@ -284,10 +292,13 @@ gh pr edit \
   --title "<종합된 변경 제목>" \
   --body-file .pr_body_temp.md
 
-# 2. 변경분에 대한 최신 AI 코드 리뷰 댓글 등록
-if [ -f .pr_review_temp.md ]; then
-  gh pr comment "$PR_URL" --body-file .pr_review_temp.md
-fi
+# 2. 최신 HEAD 기준 AI 코드 리뷰 댓글 필수 등록
+test -s .pr_review_temp.md || {
+  echo "❌ Error: AI 코드 리뷰 파일이 없거나 비어 있습니다."
+  exit 1
+}
+
+gh pr comment "$PR_URL" --body-file .pr_review_temp.md
 ```
 
 ### Step 4: 정리
@@ -311,6 +322,7 @@ rm -f .pr_body_temp.md .pr_review_temp.md
 | PR URL  | `<URL>`                                |
 | Issue   | `#<Number>` (신규 생성 또는 기존 연결) |
 | Target  | `$TARGET_BRANCH`                       |
+| AI 리뷰 | O / X (최신 HEAD SHA 및 댓글 URL)      |
 
 ---
 
@@ -322,6 +334,7 @@ rm -f .pr_body_temp.md .pr_review_temp.md
 4. **변경사항 없어도 PR 상태 확인** - 기존 PR이 있으면 업데이트 가능
 5. **이슈 자동 연결**: 브랜치 이름에 번호(예: `feature/12-foo`)가 있으면 해당 이슈를 연결하고, 없으면 새로 생성합니다.
 6. **기능별 커밋 분리**: 하나의 커밋에 너무 많은 변경사항을 담지 말고 기능 단위로 나누어 커밋하십시오.
+7. **push 후 리뷰 생략 금지**: PR 브랜치에 push했다면 최신 HEAD 전체 diff에 대한 AI 코드 리뷰 댓글을 반드시 새로 등록합니다.
 
 ---
 

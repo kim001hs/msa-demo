@@ -3,6 +3,10 @@
 # ==============================================================================
 data "aws_caller_identity" "current" {}
 
+locals {
+  github_actions_role_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.project_name}-github-actions-role"
+}
+
 module "vpc" {
   source = "../../modules/vpc"
 
@@ -46,7 +50,7 @@ module "eks" {
   node_desired_size       = var.node_desired_size
   node_min_size           = var.node_min_size
   node_max_size           = var.node_max_size
-  github_actions_role_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.project_name}-github-actions-role"
+  github_actions_role_arn = local.github_actions_role_arn
 
   # fck-nat가 먼저 구성되어 Private Subnet에서 인터넷 아웃바운드가 열려야 EKS 워커 노드가 조인 가능
   depends_on = [

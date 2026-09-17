@@ -72,23 +72,94 @@ jobs:
       # 7. Kubernetes가 생성한 AWS ELB/ENI/보안 그룹을 EKS 삭제 전에 정리
       - name: Delete Kubernetes LoadBalancer Services
         shell: bash
+        env:
+          AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
         run: |
           set -euo pipefail
 
-          CLUSTER_NAME="$(terraform output -raw eks_cluster_name 2>/dev/null || true)"
+          CLUSTER_NAME="$(terraform output -raw eks_cluster_name)"
+          EXPECTED_ROLE_ARN="$(terraform output -raw github_actions_role_arn)"
 
-          if [ -z "$CLUSTER_NAME" ]; then
-            echo "EKS cluster output is unavailable; skipping Kubernetes cleanup."
+          if [ "$AWS_ROLE_ARN" != "$EXPECTED_ROLE_ARN" ]; then
+            echo "AWS_ROLE_ARN Secret does not match the role managed by Terraform."
+            echo "Expected: $EXPECTED_ROLE_ARN"
+            exit 1
+          fi
+
+          if ! EKS_STATUS="$(
+            aws eks describe-cluster \
+              --region ap-northeast-2 \
+              --name "$CLUSTER_NAME" \
+              --query 'cluster.status' \
+              --output text 2>&1
+          )"; then
+            if [[ "$EKS_STATUS" != *"ResourceNotFoundException"* ]]; then
+              echo "Failed to query EKS cluster '$CLUSTER_NAME'." >&2
+              echo "$EKS_STATUS" >&2
+              exit 1
+            fi
+
+            echo "EKS cluster '$CLUSTER_NAME' does not exist. Checking for orphaned load balancers."
+            ORPHANED_LOAD_BALANCERS=()
+
+            CLASSIC_LOAD_BALANCERS="$(
+              aws elb describe-load-balancers \
+                --region ap-northeast-2 \
+                --query 'LoadBalancerDescriptions[].LoadBalancerName' \
+                --output text
+            )"
+
+            for load_balancer in ${CLASSIC_LOAD_BALANCERS//$'\t'/ }; do
+              if [ -z "$load_balancer" ] || [ "$load_balancer" = "None" ]; then
+                continue
+              fi
+              cluster_tag="$(
+                aws elb describe-tags \
+                  --region ap-northeast-2 \
+                  --load-balancer-names "$load_balancer" \
+                  --query "TagDescriptions[0].Tags[?Key=='kubernetes.io/cluster/${CLUSTER_NAME}'].Value | [0]" \
+                  --output text
+              )"
+              if [ "$cluster_tag" = "owned" ] || [ "$cluster_tag" = "shared" ]; then
+                ORPHANED_LOAD_BALANCERS+=("classic/$load_balancer")
+              fi
+            done
+
+            LOAD_BALANCER_ARNS="$(
+              aws elbv2 describe-load-balancers \
+                --region ap-northeast-2 \
+                --query 'LoadBalancers[].LoadBalancerArn' \
+                --output text
+            )"
+
+            for load_balancer_arn in ${LOAD_BALANCER_ARNS//$'\t'/ }; do
+              if [ -z "$load_balancer_arn" ] || [ "$load_balancer_arn" = "None" ]; then
+                continue
+              fi
+              cluster_tag="$(
+                aws elbv2 describe-tags \
+                  --region ap-northeast-2 \
+                  --resource-arns "$load_balancer_arn" \
+                  --query "TagDescriptions[0].Tags[?Key=='kubernetes.io/cluster/${CLUSTER_NAME}'].Value | [0]" \
+                  --output text
+              )"
+              if [ "$cluster_tag" = "owned" ] || [ "$cluster_tag" = "shared" ]; then
+                ORPHANED_LOAD_BALANCERS+=("v2/$load_balancer_arn")
+              fi
+            done
+
+            if [ "${#ORPHANED_LOAD_BALANCERS[@]}" -gt 0 ]; then
+              echo "Orphaned Kubernetes load balancers detected:" >&2
+              printf '  - %s\n' "${ORPHANED_LOAD_BALANCERS[@]}" >&2
+              echo "Stopping before terraform destroy. Remove the tagged owner resources through the recovery procedure." >&2
+              exit 1
+            fi
+
+            echo "No load balancers tagged for '$CLUSTER_NAME' were found; continuing terraform destroy."
             exit 0
           fi
 
-          if ! aws eks describe-cluster \
-            --region ap-northeast-2 \
-            --name "$CLUSTER_NAME" \
-            >/dev/null 2>&1; then
-            echo "EKS cluster '$CLUSTER_NAME' does not exist; skipping Kubernetes cleanup."
-            exit 0
-          fi
+          echo "EKS cluster '$CLUSTER_NAME' status: $EKS_STATUS"
 
           aws eks update-kubeconfig \
             --region ap-northeast-2 \

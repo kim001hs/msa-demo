@@ -1,6 +1,8 @@
 # ==============================================================================
 # 1. VPC 네트워크 모듈 호출
 # ==============================================================================
+data "aws_caller_identity" "current" {}
+
 module "vpc" {
   source = "../../modules/vpc"
 
@@ -32,22 +34,22 @@ module "fck_nat" {
 module "eks" {
   source = "../../modules/eks"
 
-  project_name        = var.project_name
-  environment         = var.environment
-  cluster_name        = var.cluster_name
-  cluster_version     = var.cluster_version
-  vpc_id              = module.vpc.vpc_id
-  public_subnet_ids   = module.vpc.public_subnet_ids
-  private_subnet_ids  = module.vpc.private_subnet_ids
-  node_instance_types = var.node_instance_types
-  node_capacity_type  = var.node_capacity_type
-  node_desired_size   = var.node_desired_size
-  node_min_size       = var.node_min_size
-  node_max_size       = var.node_max_size
+  project_name            = var.project_name
+  environment             = var.environment
+  cluster_name            = var.cluster_name
+  cluster_version         = var.cluster_version
+  vpc_id                  = module.vpc.vpc_id
+  public_subnet_ids       = module.vpc.public_subnet_ids
+  private_subnet_ids      = module.vpc.private_subnet_ids
+  node_instance_types     = var.node_instance_types
+  node_capacity_type      = var.node_capacity_type
+  node_desired_size       = var.node_desired_size
+  node_min_size           = var.node_min_size
+  node_max_size           = var.node_max_size
+  github_actions_role_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.project_name}-github-actions-role"
 
   # fck-nat가 먼저 구성되어 Private Subnet에서 인터넷 아웃바운드가 열려야 EKS 워커 노드가 조인 가능
   depends_on = [
     module.fck_nat
   ]
 }
-

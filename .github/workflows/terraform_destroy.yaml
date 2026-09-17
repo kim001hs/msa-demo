@@ -8,10 +8,16 @@ permissions:
   id-token: write
   contents: read
 
+# apply 워크플로우 추가 시에도 같은 group을 사용하여 state 동시 변경 방지
+concurrency:
+  group: terraform-dev
+  cancel-in-progress: false
+
 jobs:
   destroy:
     name: "Terraform Destroy (Dev Env)"
     runs-on: ubuntu-latest
+    timeout-minutes: 60
 
     defaults:
       run:
@@ -21,31 +27,98 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # 1. AWS 자격 증명 설정 (OIDC 기반 - 보안 키 없이 임시 자격 증명 발급)
+      # 1. 필수 GitHub Secret 확인
+      - name: Validate required secrets
+        shell: bash
+        env:
+          AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+        run: |
+          if [ -z "${AWS_ROLE_ARN:-}" ]; then
+            echo "Required GitHub Secret AWS_ROLE_ARN is not configured."
+            exit 1
+          fi
+
+      # 2. AWS 자격 증명 설정 (OIDC 기반 - 보안 키 없이 임시 자격 증명 발급)
       - name: Configure AWS Credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN || 'arn:aws:iam::818719120165:role/msa-demo-github-actions-role' }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           role-session-name: GitHubActions-TerraformDestroy
           aws-region: ap-northeast-2
 
-      # 2. Terraform CLI 설치
+      # 3. Terraform CLI 설치
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: "1.14.3"
 
-      # 3. 환경 변수 파일 준비 (gitignored 파일이므로 example 파일 복사)
+      # 4. Kubernetes LoadBalancer를 EKS보다 먼저 정리하기 위한 kubectl 설치
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: "v1.36.0"
+
+      # 5. 환경 변수 파일 준비 (gitignored 파일이므로 example 파일 복사)
       - name: Prepare terraform.tfvars
         run: |
           if [ ! -f terraform.tfvars ]; then
             cp terraform.tfvars.example terraform.tfvars
           fi
 
-      # 4. S3 원격 백엔드 초기화
+      # 6. S3 원격 백엔드 초기화
       - name: Terraform Init
         run: terraform init
 
-      # 5. EKS 및 인프라 전체 자동 삭제 (과금 방어)
+      # 7. Kubernetes가 생성한 AWS ELB/ENI/보안 그룹을 EKS 삭제 전에 정리
+      - name: Delete Kubernetes LoadBalancer Services
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          CLUSTER_NAME="$(terraform output -raw eks_cluster_name 2>/dev/null || true)"
+
+          if [ -z "$CLUSTER_NAME" ]; then
+            echo "EKS cluster output is unavailable; skipping Kubernetes cleanup."
+            exit 0
+          fi
+
+          if ! aws eks describe-cluster \
+            --region ap-northeast-2 \
+            --name "$CLUSTER_NAME" \
+            >/dev/null 2>&1; then
+            echo "EKS cluster '$CLUSTER_NAME' does not exist; skipping Kubernetes cleanup."
+            exit 0
+          fi
+
+          aws eks update-kubeconfig \
+            --region ap-northeast-2 \
+            --name "$CLUSTER_NAME"
+
+          if [ "$(kubectl auth can-i delete services --all-namespaces)" != "yes" ]; then
+            echo "GitHub Actions role cannot delete Kubernetes Services."
+            echo "Stopping before terraform destroy to avoid orphaning AWS load balancers."
+            exit 1
+          fi
+
+          LOAD_BALANCER_SERVICES="$(
+            kubectl get services --all-namespaces \
+              -o jsonpath='{range .items[?(@.spec.type=="LoadBalancer")]}{.metadata.namespace}{" "}{.metadata.name}{"\n"}{end}'
+          )"
+
+          if [ -z "$LOAD_BALANCER_SERVICES" ]; then
+            echo "No Kubernetes LoadBalancer Services found."
+            exit 0
+          fi
+
+          while read -r namespace service; do
+            [ -z "$service" ] && continue
+            echo "Deleting LoadBalancer Service: $namespace/$service"
+            kubectl delete service "$service" \
+              --namespace "$namespace" \
+              --wait=true \
+              --timeout=10m
+          done <<< "$LOAD_BALANCER_SERVICES"
+
+      # 8. EKS 및 인프라 전체 자동 삭제 (과금 방어)
       - name: Terraform Destroy
-        run: terraform destroy -auto-approve
+        run: terraform destroy -auto-approve -lock-timeout=10m

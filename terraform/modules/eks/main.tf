@@ -11,6 +11,10 @@ resource "aws_eks_cluster" "main" {
     endpoint_public_access  = true
   }
 
+  access_config {
+    authentication_mode = "API_AND_CONFIG_MAP"
+  }
+
   depends_on = [
     aws_iam_role_policy_attachment.cluster_AmazonEKSClusterPolicy
   ]
@@ -58,3 +62,19 @@ resource "aws_eks_node_group" "main" {
   }
 }
 
+# GitHub Actions가 destroy 전에 모든 namespace의 LoadBalancer Service를 정리할 수 있도록 허용
+resource "aws_eks_access_entry" "github_actions" {
+  cluster_name  = aws_eks_cluster.main.name
+  principal_arn = var.github_actions_role_arn
+  type          = "STANDARD"
+}
+
+resource "aws_eks_access_policy_association" "github_actions_edit" {
+  cluster_name  = aws_eks_cluster.main.name
+  principal_arn = aws_eks_access_entry.github_actions.principal_arn
+  policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSEditPolicy"
+
+  access_scope {
+    type = "cluster"
+  }
+}

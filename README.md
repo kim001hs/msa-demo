@@ -46,8 +46,7 @@ flowchart LR
 ├── terraform/               # AWS VPC, fck-nat, EKS v1.36 프로비저닝 (IaC)
 ├── helm-chart/              # Online Boutique 애플리케이션 Helm 차트
 ├── docs/
-│   ├── infra-project/       # 시스템 아키텍처, ADR-001(x86_64 채택 근거), 실험 계획
-│   └── msa/                 # 기존 Online Boutique 세부 개발 가이드
+│   └── infra-project/       # 시스템 아키텍처, ADR-001(x86_64 채택 근거), 실험 계획
 ├── project.md               # 프로젝트 상세 기획 및 실험/평가 지표 정의서
 └── msa_README.md            # Online Boutique 원본 README
 ```

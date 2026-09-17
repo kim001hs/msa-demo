@@ -66,3 +66,7 @@ variable "node_max_size" {
   default     = 3
 }
 
+variable "github_actions_role_arn" {
+  description = "IAM role ARN used by GitHub Actions to clean up Kubernetes resources before destroy"
+  type        = string
+}

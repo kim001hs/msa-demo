@@ -10,7 +10,13 @@ output "fck_nat_public_ip" {
 
 output "eks_cluster_name" {
   description = "EKS Cluster Name"
-  value       = module.eks.cluster_name
+  value       = var.cluster_name
+}
+
+output "github_actions_role_arn" {
+  description = "IAM role ARN that must match the AWS_ROLE_ARN GitHub Actions Secret"
+  value       = local.github_actions_role_arn
+  sensitive   = true
 }
 
 output "eks_cluster_endpoint" {
@@ -22,4 +28,3 @@ output "configure_kubectl" {
   description = "Command to configure kubectl to connect to the new EKS cluster"
   value       = "aws eks update-kubeconfig --region ${var.aws_region} --name ${module.eks.cluster_name}"
 }
-

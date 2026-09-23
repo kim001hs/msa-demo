@@ -18,11 +18,10 @@ Chaos Engineering을 통해 재현 가능한 장애(Ground Truth)를 주입하�
 ```mermaid
 flowchart LR
     Apps["Online Boutique<br/>(11 MSA on EKS)"] --> Obs["Observability<br/>(Prometheus / Loki / Tempo)"]
-    Obs --> Keep["AIOps Incident Hub<br/>(Keep)"]
-    Keep --> Agent["Read-only RCA Agent<br/>(LLM + Telemetry Tools)"]
-    Agent --> Report["Structured RCA Report<br/>& Slack Alert"]
+    Obs -->|Alertmanager Webhook| Engine["Investigation Engine<br/>(CNCF HolmesGPT ReAct Loop)"]
+    Engine --> Report["Structured RCA Report<br/>& Slack Alert"]
     
-    Chaos["Chaos Mesh<br/>(장애 주입)"] -.->|Ground Truth 대조| Eval["자동 평가 엔진<br/>(정확도 / 소요시간 측정)"]
+    Chaos["Chaos Mesh<br/>(장애 주입)"] -.->|Ground Truth 대조| Eval["자동 평가 엔진<br/>(정확도 / 소요시간 / 도구효율 측정)"]
     Report -.-> Eval
 ```
 
@@ -34,9 +33,9 @@ flowchart LR
 | :--- | :--- | :--- |
 | **Cloud & Infra** | AWS EKS (`v1.36`), Terraform, `fck-nat` | x86_64 (`t3.large`) 노드 그룹, FinOps 최적화 |
 | **Target App** | Google Cloud Online Boutique (11 Services) | 마이크로서비스 및 In-Cluster Redis 캐시 |
-| **Observability** | Prometheus, Grafana Loki, Tempo, Grafana | Metrics, Logs, Distributed Traces 수집 |
-| **AIOps & Incident** | Keep, Claude / OpenAI LLM API | Alert Deduplication, Incident 그룹화, RCA 파이프라인 |
-| **Chaos & Eval** | Chaos Mesh, Python Evaluation Harness | 재현 가능한 장애 주입 및 RCA 정확도 정량 평가 |
+| **Observability** | Prometheus, Alertmanager, Loki, Tempo, Grafana | Metrics, Logs, Traces, Events 풀스택 수집 |
+| **Investigation Engine** | **CNCF HolmesGPT Framework**, Python, FastMCP | ReAct 자율 조사 루프 (Kubectl/PromQL/Git/Runbook) |
+| **Chaos & Eval** | Chaos Mesh, Python Automated Runner | 재현 가능한 장애 주입 및 다차원 벤치마크 정량 평가 |
 
 ---
 
@@ -45,9 +44,8 @@ flowchart LR
 ```text
 ├── terraform/               # AWS VPC, fck-nat, EKS v1.36 프로비저닝 (IaC)
 ├── helm-chart/              # Online Boutique 애플리케이션 Helm 차트
-├── docs/
-│   └── infra-project/       # 시스템 아키텍처, ADR-001(x86_64 채택 근거), 실험 계획
-├── project.md               # 프로젝트 상세 기획 및 실험/평가 지표 정의서
+├── docs/                    # 시스템 아키텍처, ADR-001(x86_64 채택 근거), 실험 계획
+├── project.md               # 프로젝트 종합 기획서 (HolmesGPT & 정량 평가 플랫폼)
 └── msa_README.md            # Online Boutique 원본 README
 ```
 
@@ -80,7 +78,8 @@ helm upgrade --install onlineboutique ./helm-chart \
 
 ## 📑 관련 문서 링크
 
-* [시스템 아키텍처 정의서 (Architecture)](docs/infra-project/architecture.md)
-* [아키텍처 결정 기록서 (ADR-001: x86_64 선정 배경)](docs/infra-project/decisions.md)
-* [프로젝트 종합 기획서 (Project Overview)](project.md)
+* [프로젝트 종합 기획서 (Project Spec)](project.md)
+* [시스템 아키텍처 정의서 (Architecture)](docs/architecture.md)
+* [아키텍처 결정 기록서 (ADR-001: x86_64 선정 배경)](docs/decisions.md)
+* [실험 및 벤치마크 설계서 (Experiments)](docs/experiments.md)
 * [Online Boutique 원본 안내 (msa_README.md)](msa_README.md)

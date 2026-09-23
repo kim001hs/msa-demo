@@ -32,7 +32,7 @@ flowchart TB
                     end
 
                     subgraph AIOpsHub["AIOps & Chaos Hub"]
-                        Keep["Keep (AIOps Platform)"]
+                        Holmes["HolmesGPT (Agentic RCA Engine)"]
                         Chaos["Chaos Mesh (x86_64 커널 네이티브)"]
                     end
                 end
@@ -44,14 +44,15 @@ flowchart TB
     end
 
     subgraph External["External Services"]
-        LLM["LLM API (Claude / OpenAI / Bedrock)"]
+        LLM["LLM API (OpenAI / Claude / Gemini)"]
         Slack["Slack (Incident & RCA Report)"]
+        Git["GitHub (Commit / PR / Deploy History)"]
     end
 
-    Prom --> Keep
-    Keep --> LLM
-    LLM --> Keep
-    Keep --> Slack
+    Prom -->|Alertmanager Webhook| Holmes
+    Holmes <-->|ReAct Loop| LLM
+    Holmes -->|Deploy Context| Git
+    Holmes -->|RCA Report| Slack
 ```
 
 ### 주요 인프라 사양
@@ -63,7 +64,7 @@ flowchart TB
 * **컨테이너 오케스트레이션 (EKS):**
   - **EKS 버전:** `v1.36` (최신 안정 버전)
   - **워커 노드 아키텍처:** **x86_64 (`t3.large`, AL2023_x86_64_STANDARD)**
-  - *아키텍처 결정 근거:* [ADR-001 (x86_64 채택 근거)](file:///d:/Github_Repository/msa-demo/docs/infra-project/decisions.md#adr-001-eks-워커-노드-아키텍처-선정-arm64-대신-x86_64-t3large-채택) 참조.
+  - *아키텍처 결정 근거:* [ADR-001 (x86_64 채택 근거)](decisions.md#adr-001-eks-워커-노드-아키텍처-선정-arm64-대신-x86_64-t3large-채택) 참조.
 
 ---
 
@@ -71,13 +72,13 @@ flowchart TB
 
 | 계층 | 기술 스택 | 설명 |
 | :--- | :--- | :--- |
-| **인프라 / FinOps** | Terraform, EKS v1.31, `t3.large`, `fck-nat` | 선언적 IaC 기반 관리 및 NAT 비용 90% 절감 |
+| **인프라 / FinOps** | Terraform, EKS v1.36, `t3.large`, `fck-nat` | 선언적 IaC 기반 관리 및 NAT 비용 90% 절감 |
 | **애플리케이션** | Google Cloud Online Boutique | 11개 마이크로서비스 및 In-Cluster Redis 캐시 |
 | **부하 생성기** | Locust (`loadgenerator`) | 실시간 쇼핑/장바구니 트래픽 베이스라인 생성 |
 | **관측 (Observability)** | Prometheus, Loki, Tempo, Grafana | 메트릭, 로그, 분산 트레이스 다차원 텔레메트리 수집 |
 | **장애 주입 (Chaos)** | Chaos Mesh | Pod Kill, CPU/Memory 부하, 네트워크 지연/유실 주입 |
-| **인시던트 관리** | Keep (Open-source AIOps) | Alert Ingestion, 중복 제거, 그룹화 및 웹훅 라우팅 |
-| **RCA 에이전트** | Custom Read-only RCA Agent | 읽기 전용 Tool을 활용한 실시간 증거 수집 및 원인 분석 |
+| **조사 엔진 (Investigation)** | CNCF HolmesGPT, Python, FastMCP | ReAct 루프 기반 자율 진단 (kubectl/PromQL/Git/Runbook) |
+| **평가 프레임워크 (Eval)** | Automated Evaluation Harness (Python) | Ground Truth vs RCA 보고서 자동 채점 (정확도/소요시간/도구효율) |
 
 ---
 

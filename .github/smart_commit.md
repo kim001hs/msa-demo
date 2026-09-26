@@ -2,7 +2,13 @@
 description: (Fixed) 변경사항 분석, 커밋, 푸시 후 PR 상태를 확인하여 생성하거나 최신화합니다. GH CLI 자동 경로 설정 포함.
 ---
 
-> **참고:** 커밋 컨벤션은 Conventional Commits(`feat`, `fix`, `docs`, `refactor`, `chore` 등)를 따릅니다.
+> **참고:** 브랜치명, PR 제목, 커밋 컨벤션은 아래의 6대 접두사 규격을 엄격히 준수합니다:
+> 1. `feat/` (`feat:`): 새로운 기능 구현
+> 2. `fix/` (`fix:`): 버그 수정ㅉ
+> 3. `refactor/` (`refactor:`): 코드 구조 개선 (로직 불변)
+> 4. `test/` (`test:`): 단위/통합 테스트 추가 및 코드 커버리지 확보 작업
+> 5. `docs/` (`docs:`): 문서 작성 및 수정 (README, 명세서 등)
+> 6. `chore/` (`chore:`): 빌드/환경 설정, 라이브러리 추가, .gitignore 등
 > **언어:** 모든 결과 보고 및 PR 본문/댓글은 **한글**로 작성합니다.
 
 // turbo-all
@@ -38,26 +44,39 @@ fi
 
 ---
 
-## 0-1. 브랜치 전략 준수 확인 (필수!)
+## 0-1. 브랜치 전략 및 명명 규칙 준수 확인 (필수!)
 
-**⚠️ 직접 push 금지 브랜치**: `main` (GitHub Flow 전략: 기능 브랜치에서 PR을 통해 main에 병합)
+**⚠️ 직접 push 금지 브랜치**: `main` (GitHub Flow 전략: 작업 브랜치에서 PR을 통해 main에 병합)
 
 ```bash
 CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 ```
 
-| 현재 브랜치                      | push 가능? | 조치                                                                            |
-| -------------------------------- | ---------- | ------------------------------------------------------------------------------- |
-| `main`                           | ❌ 금지    | "main에 직접 push할 수 없습니다. feature 브랜치를 생성하세요." 안내 후 **중단** |
-| `feature/*`, `fix/*`, `chore/*`, `docs/*` | ✅ 허용    | 계속 진행                                                                       |
+### 📌 브랜치 명명 규칙 (Branch Naming Convention)
+모든 작업 브랜치는 반드시 다음 6가지 접두사 중 목적에 맞는 것을 사용해야 합니다:
+1. `feat/<기능명>` : 새로운 기능 구현
+2. `fix/<버그설명>` : 버그 수정
+3. `refactor/<개선내용>` : 코드 구조 개선 (로직 불변)
+4. `test/<테스트내용>` : 단위/통합 테스트 추가 및 코드 커버리지 확보 작업
+5. `docs/<문서내용>` : 문서 작성 및 수정 (README, 명세서 등)
+6. `chore/<작업내용>` : 빌드/환경 설정, 라이브러리 추가, .gitignore 등
+
+| 현재 브랜치                                                               | push 가능? | 조치                                                                                               |
+| -------------------------------------------------------------------------- | ---------- | -------------------------------------------------------------------------------------------------- |
+| `main`                                                                     | ❌ 금지    | "main에 직접 push할 수 없습니다. 작업 브랜치(`feat/*` 등)를 생성하세요." 안내 후 **중단**            |
+| `feat/*`, `fix/*`, `refactor/*`, `test/*`, `docs/*`, `chore/*`             | ✅ 허용    | 계속 진행                                                                                          |
+| 기타 브랜치명                                                              | ⚠️ 주의    | 규격 브랜치(`feat/*`, `fix/*` 등)로 새 브랜치를 생성하여 작업 권장                                   |
 
 **main에 있는 경우 → 새 브랜치 생성 제안**:
 
 ```bash
-# 권장 명령어 안내
-git checkout -b feature/<기능명>
-# 또는
-git checkout -b fix/<이슈설명>
+# 목적에 맞는 브랜치 생성 (예시)
+git checkout -b feat/<기능명>
+git checkout -b fix/<버그설명>
+git checkout -b refactor/<개선내용>
+git checkout -b test/<테스트내용>
+git checkout -b docs/<문서내용>
+git checkout -b chore/<작업내용>
 ```
 
 ---
@@ -94,14 +113,14 @@ git status -s
 #### 1단계: 첫 번째 주제 (Topic A: Infra) 브랜치 및 PR 생성
 ```bash
 # 1. main 기준으로 첫 번째 기능 브랜치 생성 (워킹 트리의 변경사항은 그대로 보존됨)
-git checkout -b feature/infra-eks-s3-migration main
+git checkout -b feat/infra-eks-s3-migration main
 
 # 2. Topic A에 해당하는 파일들만 선택적으로 스테이징
 git add terraform/ docs/infra-project/
 
 # 3. Topic A 원자적 커밋 및 푸시
 git commit -m "feat(infra): EKS v1.36 다운그레이드 및 S3 원격 백엔드 마이그레이션"
-git push -u origin feature/infra-eks-s3-migration
+git push -u origin feat/infra-eks-s3-migration
 
 # 4. Topic A에 대한 독립 PR 생성 및 AI 리뷰 댓글 등록
 # (4-A 단계의 Step 2~Step 4와 동일하게 수행)
@@ -110,14 +129,14 @@ git push -u origin feature/infra-eks-s3-migration
 #### 2단계: 두 번째 주제 (Topic B: CI/CD) 브랜치 및 PR 생성
 ```bash
 # 1. 다시 main 기준으로 두 번째 기능 브랜치 생성 (남아있는 Topic B 변경사항 보존됨)
-git checkout -b feature/ci-templates-redesign main
+git checkout -b chore/ci-templates-redesign main
 
 # 2. Topic B에 해당하는 파일들 스테이징
 git add .github/
 
 # 3. Topic B 원자적 커밋 및 푸시
-git commit -m "feat(ci): GitHub PR/코드리뷰 템플릿 일원화 및 smart-commit 개편"
-git push -u origin feature/ci-templates-redesign
+git commit -m "chore(ci): GitHub PR/코드리뷰 템플릿 일원화 및 smart-commit 개편"
+git push -u origin chore/ci-templates-redesign
 
 # 4. Topic B에 대한 독립 PR 생성 및 AI 리뷰 댓글 등록
 # (4-A 단계의 Step 2~Step 4와 동일하게 수행)
@@ -206,11 +225,23 @@ COMMITS=$(git log origin/$TARGET_BRANCH..$CURRENT_BRANCH --oneline)
 
 PR과 연결할 이슈를 확인하거나, 없으면 현재 저장소에 새로 생성하여 연결합니다.
 
-```bash
-# 1. PR 제목 정의
-PR_TITLE="<종합된 변경 제목>"
+#### 📌 PR 제목 명명 규칙 (PR Title Convention)
+PR 제목은 반드시 다음 6가지 규격 중 목적에 맞는 접두사를 사용해야 합니다:
+1. `feat: <내용>` (또는 `feat/ : <내용>`) : 새로운 기능 구현
+2. `fix: <내용>` (또는 `fix/ : <내용>`) : 버그 수정
+3. `refactor: <내용>` (또는 `refactor/ : <내용>`) : 코드 구조 개선 (로직 불변)
+4. `test: <내용>` (또는 `test/ : <내용>`) : 단위/통합 테스트 추가 및 코드 커버리지 확보 작업
+5. `docs: <내용>` (또는 `docs/ : <내용>`) : 문서 작성 및 수정 (README, 명세서 등)
+6. `chore: <내용>` (또는 `chore/ : <내용>`) : 빌드/환경 설정, 라이브러리 추가, .gitignore 등
 
-# 2. 브랜치 이름에서 이슈 번호 감지 (예: feature/12-foo -> 12)
+```bash
+# 1. PR 제목 정의 (위 6대 규칙 준수)
+# 예: PR_TITLE="feat: 카오스 엔지니어링 장애 주입 모듈 구현"
+#     PR_TITLE="fix: Redis 연결 풀 고갈 버그 수정"
+#     PR_TITLE="docs: 인시던트 진단 런북 명세서 추가"
+PR_TITLE="<prefix>: <종합된 변경 제목>"
+
+# 2. 브랜치 이름에서 이슈 번호 감지 (예: feat/12-foo -> 12)
 DETECTED_ISSUE_NUM=$(echo "$CURRENT_BRANCH" | grep -oE '/[0-9]+(-|$)' | tr -d '/-')
 
 EXISTING_ISSUE_FOUND=false
@@ -287,9 +318,9 @@ git log origin/$TARGET_BRANCH..$CURRENT_BRANCH --oneline
 ### Step 3: PR 본문 업데이트 및 새 리뷰 코멘트 등록
 
 ```bash
-# 1. PR 본문 갱신
+# 1. PR 본문 갱신 (PR 제목 6대 규격: feat:, fix:, refactor:, test:, docs:, chore: 준수)
 gh pr edit \
-  --title "<종합된 변경 제목>" \
+  --title "<prefix>: <종합된 변경 제목>" \
   --body-file .pr_body_temp.md
 
 # 2. 최신 HEAD 기준 AI 코드 리뷰 댓글 필수 등록
@@ -328,13 +359,20 @@ rm -f .pr_body_temp.md .pr_review_temp.md
 
 ## ⚠️ 주의사항
 
-1. **main에 직접 push 금지** - feature 브랜치 사용 및 PR 병합 필수
-2. **PR 본문 없이 생성 금지** - 항상 `.github/pull_request_template.md` 참조 후 생성
-3. **PR 존재 확인 필수** - gh pr view로 확인 후 생성/업데이트 결정
-4. **변경사항 없어도 PR 상태 확인** - 기존 PR이 있으면 업데이트 가능
-5. **이슈 자동 연결**: 브랜치 이름에 번호(예: `feature/12-foo`)가 있으면 해당 이슈를 연결하고, 없으면 새로 생성합니다.
-6. **기능별 커밋 분리**: 하나의 커밋에 너무 많은 변경사항을 담지 말고 기능 단위로 나누어 커밋하십시오.
-7. **push 후 리뷰 생략 금지**: PR 브랜치에 push했다면 최신 HEAD 전체 diff에 대한 AI 코드 리뷰 댓글을 반드시 새로 등록합니다.
+1. **main에 직접 push 금지** - 작업 목적에 맞는 브랜치(`feat/*`, `fix/*`, `refactor/*`, `test/*`, `docs/*`, `chore/*`) 사용 및 PR 병합 필수
+2. **브랜치명 및 PR 제목 규칙 준수 필수**:
+   - `feat/`, `feat:` : 새로운 기능 구현
+   - `fix/`, `fix:` : 버그 수정
+   - `refactor/`, `refactor:` : 코드 구조 개선 (로직 불변)
+   - `test/`, `test:` : 단위/통합 테스트 추가 및 코드 커버리지 확보 작업
+   - `docs/`, `docs:` : 문서 작성 및 수정 (README, 명세서 등)
+   - `chore/`, `chore:` : 빌드/환경 설정, 라이브러리 추가, .gitignore 등
+3. **PR 본문 없이 생성 금지** - 항상 `.github/pull_request_template.md` 참조 후 생성
+4. **PR 존재 확인 필수** - gh pr view로 확인 후 생성/업데이트 결정
+5. **변경사항 없어도 PR 상태 확인** - 기존 PR이 있으면 업데이트 가능
+6. **이슈 자동 연결**: 브랜치 이름에 번호(예: `feat/12-foo`)가 있으면 해당 이슈를 연결하고, 없으면 새로 생성합니다.
+7. **기능별 커밋 분리**: 하나의 커밋에 너무 많은 변경사항을 담지 말고 기능 단위로 나누어 커밋하십시오.
+8. **push 후 리뷰 생략 금지**: PR 브랜치에 push했다면 최신 HEAD 전체 diff에 대한 AI 코드 리뷰 댓글을 반드시 새로 등록합니다.
 
 ---
 
@@ -351,7 +389,7 @@ rm -f .pr_body_temp.md .pr_review_temp.md
   │
   ├── [다중 주제 감지] (예: Infra + CI/CD 변경사항 혼재)
   │     │
-  │     ├── [Topic A 브랜치] (main 기준 `git checkout -b feature/infra-... main`)
+  │     ├── [Topic A 브랜치] (main 기준 `git checkout -b feat/infra-... main`)
   │     │     │
   │     │     ▼
   │     │   Topic A 관련 파일 선택적 스테이징 (`git add terraform/ ...`)
@@ -365,7 +403,7 @@ rm -f .pr_body_temp.md .pr_review_temp.md
   │     │     ▼
   │     │   Topic A AI 리뷰 댓글 자동 등록 (.github/code_review_template.md)
   │     │
-  │     └── [Topic B 브랜치] (main 기준 `git checkout -b feature/ci-... main`)
+  │     └── [Topic B 브랜치] (main 기준 `git checkout -b chore/ci-... main`)
   │           │
   │           ▼
   │         Topic B 관련 파일 스테이징 (`git add .github/ ...`)
@@ -384,9 +422,9 @@ rm -f .pr_body_temp.md .pr_review_temp.md
         ▼
       현재 브랜치 확인
         │
-        ├── `main` 브랜치 ──▶ `git checkout -b feature/<기능명>` 생성
+        ├── `main` 브랜치 ──▶ 목적에 맞는 새 브랜치(`git checkout -b feat/<기능명>` 등) 생성
         │
-        └── `feature/*` 브랜치 유지
+        └── 규격 브랜치(`feat/*`, `fix/*` 등) 유지
               │
               ▼
             원자적 커밋 & 푸시

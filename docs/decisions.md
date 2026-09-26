@@ -13,7 +13,7 @@
 ### 1. 배경 (Context)
 초기 아키텍처 설계 단계에서는 AWS Graviton(`t4g.large`)을 도입하여 x86_64 인스턴스 대비 약 20%의 컴퓨팅 비용 절감(FinOps)을 목표로 설정했습니다.
 
-일반적인 마이크로서비스(Online Boutique) 및 관측 스택(Prometheus, Grafana Loki, Tempo, Keep)은 공식 멀티아키텍처(Multi-arch) 컨테이너 이미지를 지원하므로 ARM64 환경에서도 정상 구동이 가능합니다. 
+일반적인 마이크로서비스(Online Boutique) 및 관측/조사 스택(Prometheus, Grafana Loki, Tempo, HolmesGPT)은 공식 멀티아키텍처(Multi-arch) 컨테이너 이미지를 지원하므로 ARM64 환경에서도 정상 구동이 가능합니다. 
 
 그러나 본 프로젝트의 핵심 목표 중 하나인 **Chaos Engineering(장애 자동 주입 및 정량 평가 파이프라인)**을 구현하기 위해 **Chaos Mesh**를 도입하는 과정에서 심각한 아키텍처 종속성 및 런타임 호환성 문제가 검토되었습니다.
 
